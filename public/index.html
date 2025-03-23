@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BirdFile - Hosting Plików</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f4f4f4;
+            text-align: center;
+            padding: 50px;
+        }
+
+        h1 {
+            color: #4CAF50;
+            font-size: 3rem;
+        }
+
+        .upload-btn {
+            background-color: #4CAF50;
+            color: white;
+            padding: 15px 30px;
+            font-size: 1.5rem;
+            cursor: pointer;
+            border: none;
+            border-radius: 5px;
+            transition: background-color 0.3s ease;
+        }
+
+        .upload-btn:hover {
+            background-color: #45a049;
+        }
+
+        .file-list {
+            margin-top: 30px;
+            list-style-type: none;
+            padding: 0;
+        }
+
+        .file-item {
+            margin: 10px 0;
+            padding: 10px;
+            background-color: #fff;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .file-item .delete-btn {
+            background-color: red;
+            color: white;
+            padding: 5px 10px;
+            cursor: pointer;
+            border: none;
+            border-radius: 5px;
+        }
+
+        .file-item .delete-btn:hover {
+            background-color: darkred;
+        }
+    </style>
+</head>
+<body>
+
+<h1>BirdFile - Hosting Plików</h1>
+<button class="upload-btn" onclick="document.getElementById('fileInput').click()">Prześlij plik</button>
+<input type="file" id="fileInput" style="display: none;" onchange="uploadFile()" />
+
+<ul class="file-list" id="fileList"></ul>
+
+<script>
+    // Pobranie listy plików
+    function getFiles() {
+        fetch('/files')
+            .then(response => response.json())
+            .then(files => {
+                const fileList = document.getElementById('fileList');
+                fileList.innerHTML = '';
+                files.forEach(file => {
+                    const listItem = document.createElement('li');
+                    listItem.classList.add('file-item');
+                    listItem.innerHTML = `
+                        <span>${file.filename} (Dodano: ${file.date})</span>
+                        <button class="delete-btn" onclick="deleteFile('${file.filename}')">Usuń</button>
+                    `;
+                    fileList.appendChild(listItem);
+                });
+            });
+    }
+
+    // Wysłanie pliku na serwer
+    function uploadFile() {
+        const fileInput = document.getElementById('fileInput');
+        const formData = new FormData();
+        formData.append('file', fileInput.files[0]);
+
+        fetch('/upload', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.message) {
+                alert(data.message);
+                getFiles();  // Odśwież listę plików
+            }
+        })
+        .catch(error => console.error('Błąd przesyłania pliku:', error));
+    }
+
+    // Usuwanie pliku
+    function deleteFile(filename) {
+        fetch(`/delete/${filename}`, { method: 'DELETE' })
+            .then(response => response.json())
+            .then(data => {
+                if (data.message) {
+                    alert(data.message);
+                    getFiles();  // Odśwież listę plików
+                }
+            })
+            .catch(error => console.error('Błąd usuwania pliku:', error));
+    }
+
+    // Inicjalizacja listy plików po załadowaniu strony
+    window.onload = getFiles;
+</script>
+
+</body>
+</html>
