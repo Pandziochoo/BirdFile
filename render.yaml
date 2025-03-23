@@ -1,3 +1,7 @@
-uild:
-  # Używamy npm zamiast bun
-  command: "npm install"
+services:
+  - type: web
+    name: birdfile
+    env: node
+    buildCommand: "npm install"
+    startCommand: "npm start"
+    plan: free
