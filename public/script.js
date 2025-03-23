@@ -1,3 +1,4 @@
+// Obsługa przesyłania plików
 document.getElementById('upload-form').addEventListener('submit', function (e) {
     e.preventDefault();
     const formData = new FormData();
