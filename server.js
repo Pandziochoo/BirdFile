@@ -15,12 +15,13 @@ if (!fs.existsSync(uploadDir)) {
 // Konfiguracja multer (przechowywanie plików)
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
-        cb(null, uploadDir); // folder, w którym pliki będą przechowywane
+        cb(null, uploadDir);
     },
     filename: (req, file, cb) => {
-        cb(null, Date.now() + path.extname(file.originalname)); // unikalna nazwa pliku
+        cb(null, Date.now() + path.extname(file.originalname));
     }
 });
+
 const upload = multer({ storage });
 
 // Middleware do obsługi statycznych plików
@@ -29,35 +30,27 @@ app.use("/uploads", express.static(uploadDir));
 
 // Endpoint do przesyłania plików
 app.post("/upload", upload.single("file"), (req, res) => {
-    if (!req.file) {
-        return res.status(400).json({ error: "Brak pliku" });
-    }
+    if (!req.file) return res.status(400).json({ error: "Brak pliku" });
     res.json({
         message: "Plik przesłany",
-        file: req.file.filename, // zwrócenie nazwy pliku
-        uploadedAt: new Date().toLocaleString() // data przesyłania
+        file: req.file.filename,
+        url: `/uploads/${req.file.filename}`
     });
 });
 
 // Endpoint do pobierania listy plików
 app.get("/files", (req, res) => {
     fs.readdir(uploadDir, (err, files) => {
-        if (err) {
-            return res.status(500).json({ error: "Błąd serwera" });
-        }
+        if (err) return res.status(500).json({ error: "Błąd serwera" });
         res.json(files);
     });
 });
 
 // Endpoint do usuwania pliku
 app.delete("/files/:filename", (req, res) => {
-    const { filename } = req.params;
-    const filePath = path.join(uploadDir, filename);
-
+    const filePath = path.join(uploadDir, req.params.filename);
     fs.unlink(filePath, (err) => {
-        if (err) {
-            return res.status(500).json({ error: "Nie udało się usunąć pliku" });
-        }
+        if (err) return res.status(500).json({ error: "Błąd usuwania pliku" });
         res.json({ message: "Plik usunięty" });
     });
 });
