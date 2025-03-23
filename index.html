@@ -3,49 +3,128 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BirdFile - Hosting plików</title>
+    <title>BirdFile - Hosting Plików</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
     <style>
-        body { font-family: Arial, sans-serif; text-align: center; padding: 20px; }
-        .container { max-width: 600px; margin: auto; }
-        input { margin-top: 20px; }
-        .file-list { margin-top: 20px; }
+        body {
+            font-family: 'Poppins', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f7f7f7;
+        }
+        .container {
+            text-align: center;
+            max-width: 600px;
+            width: 100%;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            color: #333;
+        }
+        .upload-btn {
+            display: inline-block;
+            background-color: #4CAF50;
+            color: white;
+            padding: 15px 32px;
+            font-size: 16px;
+            border-radius: 10px;
+            text-decoration: none;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .upload-btn:hover {
+            background-color: #45a049;
+        }
+        .file-list {
+            margin-top: 20px;
+            list-style: none;
+            padding: 0;
+        }
+        .file-item {
+            background-color: #f1f1f1;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .file-item a {
+            color: #4CAF50;
+            text-decoration: none;
+        }
+        .delete-btn {
+            background-color: #f44336;
+            color: white;
+            padding: 8px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 16px;
+            border: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .delete-btn:hover {
+            background-color: #e53935;
+        }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>BirdFile</h1>
-        <p>Prosty hosting plików</p>
-        <input type="file" id="fileInput">
-        <button onclick="uploadFile()">Prześlij</button>
-        <div class="file-list" id="fileList"></div>
+        <h1>Hosting Plików BirdFile</h1>
+        <a href="#" class="upload-btn" id="uploadBtn">Prześlij plik</a>
+        <form id="uploadForm" style="display: none;" action="/upload" method="post" enctype="multipart/form-data">
+            <input type="file" name="file" id="fileInput">
+            <button type="submit" style="display: none;"></button>
+        </form>
+        <h3>Lista plików:</h3>
+        <ul class="file-list" id="fileList"></ul>
     </div>
-    
+
     <script>
-        async function uploadFile() {
-            const fileInput = document.getElementById('fileInput');
-            const file = fileInput.files[0];
-            if (!file) return alert("Wybierz plik!");
+        document.getElementById('uploadBtn').addEventListener('click', () => {
+            document.getElementById('fileInput').click();
+        });
 
-            const formData = new FormData();
-            formData.append("file", file);
+        document.getElementById('fileInput').addEventListener('change', (event) => {
+            document.getElementById('uploadForm').submit();
+        });
 
-            const response = await fetch("/upload", { method: "POST", body: formData });
-            if (response.ok) {
-                alert("Plik przesłany!");
-                loadFiles();
-            } else {
-                alert("Błąd przesyłania pliku");
-            }
-        }
+        // Pobieranie listy plików
+        fetch('/files')
+            .then(response => response.json())
+            .then(files => {
+                const fileList = document.getElementById('fileList');
+                files.forEach(file => {
+                    const fileItem = document.createElement('li');
+                    fileItem.classList.add('file-item');
+                    fileItem.innerHTML = `
+                        <span>
+                            <a href="/uploads/${file.filename}" target="_blank">${file.filename}</a>
+                            <br>
+                            <small>Dodano: ${file.date}</small>
+                        </span>
+                        <button class="delete-btn" data-file="${file.filename}">X</button>
+                    `;
+                    fileList.appendChild(fileItem);
+                });
 
-        async function loadFiles() {
-            const response = await fetch("/files");
-            const files = await response.json();
-            const fileList = document.getElementById("fileList");
-            fileList.innerHTML = files.map(file => `<p><a href="/uploads/${file}" download>${file}</a></p>`).join("");
-        }
-
-        loadFiles();
+                // Obsługa usuwania plików
+                document.querySelectorAll('.delete-btn').forEach(button => {
+                    button.addEventListener('click', (e) => {
+                        const filename = e.target.getAttribute('data-file');
+                        fetch(`/delete/${filename}`, { method: 'DELETE' })
+                            .then(() => window.location.reload());
+                    });
+                });
+            });
     </script>
 </body>
 </html>
