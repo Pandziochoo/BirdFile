@@ -8,7 +8,7 @@
   },
   "dependencies": {
     "express": "^4.18.1",
-    "multer": "^2.0.0",  // Zaktualizowana wersja multer
+    "multer": "^2.0.0",
     "path": "^0.12.7"
   }
 }
