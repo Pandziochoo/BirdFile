@@ -4,7 +4,7 @@ const path = require("path");
 const fs = require("fs");
 
 const app = express();
-const PORT = process.env.PORT || 10000;  // Port na Renderze
+const PORT = process.env.PORT || 10000;
 
 // Tworzymy folder na przesłane pliki, jeśli go nie ma
 const uploadDir = path.join(__dirname, "uploads");
@@ -29,36 +29,42 @@ app.use("/uploads", express.static(uploadDir));
 
 // Endpoint do wyświetlania strony głównej
 app.get("/", (req, res) => {
-    res.send(`
-        <h1>Witaj w BirdFile!</h1>
-        <p>To jest prosty hosting plików.</p>
-        <p>Możesz przesłać pliki i pobrać je poniżej.</p>
-        <form ref='uploadForm' 
-            id='uploadForm' 
-            action='/upload' 
-            method='post' 
-            encType="multipart/form-data">
-              <input type="file" name="file" />
-              <input type='submit' value='Prześlij plik!' />
-        </form>
-        <h3>Przesyłanie pliku:</h3>
-        <ul>
-            <li><a href='/files'>Pobierz listę plików</a></li>
-        </ul>
-    `);
+    res.sendFile(path.join(__dirname, "public", "index.html"));
 });
 
 // Endpoint do przesyłania plików
 app.post("/upload", upload.single("file"), (req, res) => {
     if (!req.file) return res.status(400).json({ error: "Brak pliku" });
-    res.json({ message: "Plik przesłany", file: req.file.filename });
+    const fileInfo = {
+        filename: req.file.filename,
+        date: new Date().toLocaleString()
+    };
+    fs.appendFileSync("files.json", JSON.stringify(fileInfo) + '\n');
+    res.redirect('/');
 });
 
 // Endpoint do pobierania listy plików
 app.get("/files", (req, res) => {
-    fs.readdir(uploadDir, (err, files) => {
+    const files = [];
+    fs.readdir(uploadDir, (err, filenames) => {
         if (err) return res.status(500).json({ error: "Błąd serwera" });
+        filenames.forEach(filename => {
+            files.push({
+                filename: filename,
+                date: new Date(fs.statSync(path.join(uploadDir, filename)).mtime).toLocaleString()
+            });
+        });
         res.json(files);
+    });
+});
+
+// Endpoint do usuwania plików
+app.delete("/delete/:filename", (req, res) => {
+    const { filename } = req.params;
+    const filePath = path.join(uploadDir, filename);
+    fs.unlink(filePath, (err) => {
+        if (err) return res.status(500).json({ error: "Nie udało się usunąć pliku" });
+        res.status(200).json({ message: "Plik usunięty" });
     });
 });
 
