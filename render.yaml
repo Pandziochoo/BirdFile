@@ -1,0 +1,3 @@
+uild:
+  # Używamy npm zamiast bun
+  command: "npm install"
